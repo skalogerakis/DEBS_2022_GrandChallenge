@@ -55,7 +55,7 @@ function flink_install() {
 
     #JM_IP=$(hostname -I | cut -d\  -f1)
     #sed -i -e "/jobmanager\.rpc\.address:/ s/: .*/: ${JM_IP}/" ${FLINK_HOME}/conf/flink-conf.yaml
-    sed -i -e "/jobmanager\.memory\.process\.size:/ s/: .*/: 5000m/" ${FLINK_HOME}/conf/flink-conf.yaml
+    sed -i -e "taskmanager\.memory\.process\.size/ s/: .*/: 5000m/" ${FLINK_HOME}/conf/flink-conf.yaml
 }
 
 # start/stop flink job manager
@@ -141,12 +141,6 @@ function kafka_clean() {
 
 function application_build() {
     echo "$(date +'%d/%m/%y %T') Build binaries"
-#	cd ${HOME}
-
-#    wget  http://139.91.92.47:5222/application.tar.gz
-#	sleep 2
-#    tar -zxvf application.tar.gz > /dev/null 
-#    sleep 2
 
     # use a predefined folder containig src code for TESTING
     DATA_LOADER_HOME=${REPO_HOME}/gRPC
@@ -208,6 +202,7 @@ case "$ACTION" in
 #	redis_install
 	;;
     start)
+	application_build
 	sudo sh -c "sync; echo 3 > /proc/sys/vm/drop_caches "
 	kafka_start
 	sleep 8
