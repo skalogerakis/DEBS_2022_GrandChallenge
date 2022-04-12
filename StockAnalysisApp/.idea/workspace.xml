@@ -55,7 +55,7 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "WebServerToolWindowFactoryState": "false",
-    "last_opened_file_path": "/home/skalogerakis/Desktop/DEBSCHALLENGE2022/StockAnalysisApp",
+    "last_opened_file_path": "/home/skalogerakis/Desktop/DEBSCHALLENGE2022/gRPC",
     "nodejs_package_manager_path": "npm",
     "settings.editor.selected.configurable": "project.propVCSSupport.DirectoryMappings"
   }
@@ -309,7 +309,7 @@
       <workItem from="1649783478913" duration="606000" />
       <workItem from="1649785150322" duration="198000" />
       <workItem from="1649785372556" duration="135000" />
-      <workItem from="1649785536739" duration="306000" />
+      <workItem from="1649785536739" duration="781000" />
     </task>
     <servers />
   </component>
