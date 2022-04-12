@@ -25,12 +25,18 @@ import grpc.modules.{Batch, SecurityType}
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.util.Collector
 
+import java.time.LocalDateTime
 import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
 import scala.collection.mutable.HashMap
 
 class BatchToEventUnpack extends FlatMapFunction[Batch, EventUnpackSchema] {
   override def flatMap(batch: Batch, collector: Collector[EventUnpackSchema]): Unit = {
     val lookupSymbols: Set[String] = batch.getLookupSymbolsList.toSet
+
+    if (batch.getSeqId % 100 == 0){
+      println(s"Batch ID: ${batch.getSeqId}, Timestamp ${LocalDateTime.now()}")
+    }
+
 
     /**
      * Preprocessing step involves scanning all the events once in a batch to find:

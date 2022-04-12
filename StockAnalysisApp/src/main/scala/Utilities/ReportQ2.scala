@@ -27,6 +27,8 @@ import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.util.Collector
 
+import java.time.LocalDateTime
+
 class ReportQ2() extends KeyedProcessFunction[Long, CrossoverToReporterSchema, ResultQ2] {
 
   @transient private var eventCounter: ValueState[Int] = _
@@ -70,6 +72,11 @@ class ReportQ2() extends KeyedProcessFunction[Long, CrossoverToReporterSchema, R
 
 
     if (flagResults.value()) {
+
+      if (in.batchID % 100 == 0){
+        println(s"REPORT Q2 -> Batch ID: ${in.batchID}, Timestamp ${LocalDateTime.now()}")
+      }
+
       val resultQ2 = ResultQ2.newBuilder()
         .setBatchSeqId(ctx.getCurrentKey)
         .addAllCrossoverEvents(resultListQ2.get())
