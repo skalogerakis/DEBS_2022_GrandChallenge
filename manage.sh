@@ -55,6 +55,7 @@ function flink_install() {
 
     #JM_IP=$(hostname -I | cut -d\  -f1)
     #sed -i -e "/jobmanager\.rpc\.address:/ s/: .*/: ${JM_IP}/" ${FLINK_HOME}/conf/flink-conf.yaml
+    sed -i -e "/jobmanager\.memory\.process\.size:/ s/: .*/: 5000m/" ${FLINK_HOME}/conf/flink-conf.yaml
 }
 
 # start/stop flink job manager
