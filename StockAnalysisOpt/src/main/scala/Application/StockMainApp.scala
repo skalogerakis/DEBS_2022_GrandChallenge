@@ -28,10 +28,13 @@ import org.apache.flink.connector.base.DeliveryGuarantee
 import org.apache.flink.connector.kafka.sink.{KafkaRecordSerializationSchema, KafkaSink}
 import org.apache.flink.connector.kafka.source.KafkaSource
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer
+import org.apache.flink.streaming.api.CheckpointingMode
+import org.apache.flink.streaming.api.environment.CheckpointConfig.ExternalizedCheckpointCleanup
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment, createTypeInformation}
 import org.apache.kafka.clients.producer.ProducerConfig
 
 import java.util.Properties
+import scala.util.Try
 
 object StockMainApp {
 
@@ -39,6 +42,16 @@ object StockMainApp {
   def main(args: Array[String]): Unit = {
 
     val env = StreamExecutionEnvironment.getExecutionEnvironment
+
+    val param = parameterParser(args)
+
+    if (param._3 != -1.0) {
+      println("Checkpoint Activate")
+      env.enableCheckpointing(60000 * param._3)
+      env.getCheckpointConfig.setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE)
+      env.getCheckpointConfig.setExternalizedCheckpointCleanup(ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION)
+      //      env.getCheckpointConfig.setCheckpointStorage("file:///home/skalogerakis/Desktop/DEBS_2022_GrandChallenge/StockAnalysisApp/temp")
+    }
 
     /**
      * Register protobuf serializers/deserializers
@@ -149,6 +162,46 @@ object StockMainApp {
 
 
     env.execute("DEBS2022-Challenge")
+  }
+
+  def parameterParser(arguments: Array[String]): (Double, Double, Int) = {
+    println(s"++++++Application Parameters++++++++")
+
+    val checkpointInterval: Int = if (Try(arguments(2).toInt).isSuccess) {
+      arguments(2).toInt
+    } else {
+      -1
+    }
+
+    var j1: Double = 0.0
+    var j2: Double = 0.0
+    try {
+      //j1 must be always smaller than the j2
+      if (arguments(0).toDouble < arguments(1).toDouble) {
+        j1 = arguments(0).toDouble
+        j2 = arguments(1).toDouble
+      } else {
+        j1 = arguments(1).toDouble
+        j2 = arguments(0).toDouble
+      }
+
+    } catch {
+      case e: NumberFormatException => {
+        //In case of an error give the default values
+        j1 = 38
+        j2 = 100
+      }
+    } finally {
+      println(s"\n\tj1: ${j1}\n\tj2: ${j2}\n\tCheckpoint: ${
+        if (checkpointInterval == -1.0) {
+          "No Checkpoint"
+        } else {
+          checkpointInterval.toString + " minutes"
+        }
+      }")
+    }
+    (j1, j2, checkpointInterval)
+
   }
 
 
