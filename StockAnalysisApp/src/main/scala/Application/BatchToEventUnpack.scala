@@ -33,9 +33,9 @@ class BatchToEventUnpack extends FlatMapFunction[Batch, EventUnpackSchema] {
   override def flatMap(batch: Batch, collector: Collector[EventUnpackSchema]): Unit = {
     val lookupSymbols: Set[String] = batch.getLookupSymbolsList.toSet
 
-    if (batch.getSeqId % 100 == 0){
-      println(s"Batch ID: ${batch.getSeqId}, Timestamp ${LocalDateTime.now()}")
-    }
+//    if (batch.getSeqId % 100 == 0){
+//      println(s"Batch ID: ${batch.getSeqId}, Timestamp ${LocalDateTime.now()}")
+//    }
 
 
     /**

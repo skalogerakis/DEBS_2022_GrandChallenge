@@ -63,9 +63,10 @@ class ReportQ1 extends KeyedProcessFunction[Long, EMASchema, ResultQ1] {
 
     if (flagResults.value()) {
 
-      if (in.batchID % 100 == 0){
-        println(s"REPORT Q1 ->Batch ID: ${in.batchID}, Timestamp ${LocalDateTime.now()}")
-      }
+//      if (in.batchID % 100 == 0){
+//        println(s"REPORT Q1 ->Batch ID: ${in.batchID}, Timestamp ${LocalDateTime.now()}")
+//      }
+
       val resultQ1 = ResultQ1.newBuilder()
         .setBatchSeqId(ctx.getCurrentKey)
         .addAllIndicators(resultList.get())

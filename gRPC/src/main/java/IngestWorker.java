@@ -71,7 +71,7 @@ public class IngestWorker implements Runnable{
         while(true) {
             // throttle data ingestion until the reporter catches up
             // data ingestion should be at max 10 batches ahead in order to reduce latency
-            if ( (batches_fetched.get() + 10) > reported_batches.get()) {
+            if ( (batches_fetched.get() - reported_batches.get()) > 10) {
                 try {
                     Thread.sleep(10);
                 } catch (Exception ex) {
@@ -79,7 +79,7 @@ public class IngestWorker implements Runnable{
                 }
                 continue;
             }
-
+            
             Batch batch = challengeClient.nextBatch(benchmark);
             producer.send(new ProducerRecord<Long, byte[]>(ingestTopicName, batch.getSeqId() ,batch.toByteArray()));
             int curr_count = batches_fetched.incrementAndGet();
@@ -92,9 +92,9 @@ public class IngestWorker implements Runnable{
                 System.out.println("Received lastbatch, finished!");
                 break;
             }
-
+            
         }
-        System.out.println(new java.util.Date() + " Ingest complete @ " + batches_fetched.incrementAndGet() + " with " + last_bach_fetched.get());
+        System.out.println(new java.util.Date() + " Ingest complete @ " + batches_fetched.get() + " with " + last_bach_fetched.get());
     }
 
     public void ResultConsumer() {
@@ -110,17 +110,17 @@ public class IngestWorker implements Runnable{
         int reported_q2 = 0;
 
         while(true) {
-            // if (last_bach_fetched.get() && (reported_batches.get() >= batches_fetched.get()) ) {
-            //     System.out.println(new java.util.Date() + " Reporter complete @ " + reported_batches.get() + " batches");
-            //     break;
-            // }
-            int batches_fetched_local = batches_fetched.get();
-            if (last_bach_fetched.get() && 
-                (reported_q1 >= batches_fetched_local) &&
-                (reported_q2 >= batches_fetched_local) ) {
+            if (last_bach_fetched.get() && (reported_batches.get() >= batches_fetched.get()) ) {
                 System.out.println(new java.util.Date() + " Reporter complete @ " + reported_batches.get() + " batches");
                 break;
             }
+            // int batches_fetched_local = batches_fetched.get();
+            // if (last_bach_fetched.get() && 
+            //     (reported_q1 >= batches_fetched_local) &&
+            //     (reported_q2 >= batches_fetched_local) ) {
+            //     System.out.println(new java.util.Date() + " Reporter complete @ " + reported_batches.get() + " batches");
+            //     break;
+            // }
 
             ConsumerRecords<Long, ResultQ1> recordsQ1 = consumerQ1.poll(Duration.ofMillis(10));
             ConsumerRecords<Long,ResultQ2> recordsQ2 = consumerQ2.poll(Duration.ofMillis(10));
@@ -129,7 +129,9 @@ public class IngestWorker implements Runnable{
             //    System.out.println("Key1: "+ record1.key() + ", Value1:" +record1.value().toString());
                 ResultQ1 res1Send = record1.value().toBuilder().setBenchmarkId(benchmark.getId()).build();
                 challengeClient.resultQ1(res1Send);
+                reported_batches.incrementAndGet();
                 reported_q1++;
+                // System.out.println(new java.util.Date() + " reported Q1 for " + record1.value().getBatchSeqId() + " reported count: " + reported_batches.get());
             }
 
             for(ConsumerRecord<Long,ResultQ2> record2: recordsQ2){
@@ -158,3 +160,4 @@ public class IngestWorker implements Runnable{
 
 
 }
+

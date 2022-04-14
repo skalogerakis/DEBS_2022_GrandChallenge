@@ -73,9 +73,9 @@ class ReportQ2() extends KeyedProcessFunction[Long, CrossoverToReporterSchema, R
 
     if (flagResults.value()) {
 
-      if (in.batchID % 100 == 0){
-        println(s"REPORT Q2 -> Batch ID: ${in.batchID}, Timestamp ${LocalDateTime.now()}")
-      }
+//      if (in.batchID % 100 == 0){
+//        println(s"REPORT Q2 -> Batch ID: ${in.batchID}, Timestamp ${LocalDateTime.now()}")
+//      }
 
       val resultQ2 = ResultQ2.newBuilder()
         .setBatchSeqId(ctx.getCurrentKey)
