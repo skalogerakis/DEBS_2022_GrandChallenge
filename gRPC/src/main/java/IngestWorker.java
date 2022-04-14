@@ -106,8 +106,18 @@ public class IngestWorker implements Runnable{
         consumerQ1.subscribe(Arrays.asList(topic+"Q1"));
         consumerQ2.subscribe(Arrays.asList(topic+"Q2"));
 
+        int reported_q1 = 0;
+        int reported_q2 = 0;
+
         while(true) {
-            if (last_bach_fetched.get() && (reported_batches.get() >= batches_fetched.get()) ) {
+            // if (last_bach_fetched.get() && (reported_batches.get() >= batches_fetched.get()) ) {
+            //     System.out.println(new java.util.Date() + " Reporter complete @ " + reported_batches.get() + " batches");
+            //     break;
+            // }
+            int batches_fetched_local = batches_fetched.get();
+            if (last_bach_fetched.get() && 
+                (reported_q1 >= batches_fetched_local) &&
+                (reported_q2 >= batches_fetched_local) ) {
                 System.out.println(new java.util.Date() + " Reporter complete @ " + reported_batches.get() + " batches");
                 break;
             }
@@ -119,15 +129,17 @@ public class IngestWorker implements Runnable{
             //    System.out.println("Key1: "+ record1.key() + ", Value1:" +record1.value().toString());
                 ResultQ1 res1Send = record1.value().toBuilder().setBenchmarkId(benchmark.getId()).build();
                 challengeClient.resultQ1(res1Send);
+                reported_q1++;
             }
 
             for(ConsumerRecord<Long,ResultQ2> record2: recordsQ2){
             //    System.out.println("Key2: "+ record2.key() + ", Value2:" +record2.value().toString());
                 ResultQ2 res2Send = record2.value().toBuilder().setBenchmarkId(benchmark.getId()).build();
                 challengeClient.resultQ2(res2Send);
+                reported_q2++;
             }
 
-            reported_batches.incrementAndGet();
+            // reported_batches.incrementAndGet();
             // System.out.println("---> reported " + reported_batches.get() + " / " + batches_fetched.get() + " (" + last_bach_fetched.get() + ")");
         }
 
