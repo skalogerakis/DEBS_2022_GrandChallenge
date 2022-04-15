@@ -2,12 +2,34 @@
 
 HOME=`eval echo ~$USER`
 REPO_HOME=$PWD
-DOWNLOADS="DOWNLOADS"
+DOWNLOADS="${REPO_HOME}/DOWNLOADS"
 REDIS_HOME="${REPO_HOME}/redis"
-FLINK_HOME="${REPO_HOME}/flink"
 KAFKA_HOME="${REPO_HOME}/kafka_2.12-3.1.0"
+FLINK_HOME="${REPO_HOME}/flink"
+FLINK_CHECKPOINT_DIR="${REPO_HOME}/flink_checkpoint"
 
 USAGE_MSG="$0 <install, stop, start>"
+
+PARALLELISM=1
+J1_ARG=38
+J2_ARG=100
+CHECKPOINT_INTERVAL=-1
+
+function help() {
+    echo "Syntax: $0 install| start [-p parallelim] [-i inteval1] [-j interval2] | stop"
+    echo "options:"
+    echo "install   Intall the necessary software stack (utilities, processing platforms)"
+    echo "build     Build application from source code"
+    echo "start     Deploy and start the processes for fetching and analysing data"
+    echo "      optional start arguments:"
+    echo "      -p <number>  Flink parallelism (Default: 1)"
+    echo "      -i <number>  Interval 1 (Default 38)"
+    echo "      -j <number>  Interval 2 (Default 100)"
+    echo "      -c <minutes> Checkpointing interval in minutes (Default: no checkpointing)" 
+    echo "stop      Stops processing and processing platform"
+    echo ""
+    echo "e.g. ./manage.sh start -p 2 -i 50 -j 90"
+}
 
 function install_utilities() {
     echo "$(date +'%d/%m/%y %T') Install necessary dependencies. This may take a while. Please wait"
@@ -16,12 +38,14 @@ function install_utilities() {
     sudo apt-get install -y htop build-essential openjdk-8-jdk maven git > /dev/null 2>&1
     sudo timedatectl set-timezone Europe/Athens
 	cd ${REPO_HOME}
-    mkdir $DOWNLOADS
+    mkdir -p $DOWNLOADS
+    mkdir -p ${FLINK_CHECKPOINT_DIR}
 }
 
 function redis_install() {
     echo "$(date +'%d/%m/%y %T') Install Redis"
-    cd ${REPO_HOME}/${DOWNLOADS}
+#    cd ${REPO_HOME}/${DOWNLOADS}
+    cd ${DOWNLOADS}
     wget --quiet https://download.redis.io/releases/redis-6.2.6.tar.gz > /dev/null
     tar -zxvf  redis-6.2.6.tar.gz > /dev/null 2>&1
 
@@ -46,7 +70,8 @@ function redis_shutdown() {
 
 function flink_install() {
     echo "$(date +'%d/%m/%y %T') Install Flink"
-    cd ${REPO_HOME}/${DOWNLOADS}
+#    cd ${REPO_HOME}/${DOWNLOADS}
+    cd ${DOWNLOADS}
     wget --quiet https://archive.apache.org/dist/flink/flink-1.14.3/flink-1.14.3-bin-scala_2.12.tgz
     tar -zxvf flink-1.14.3-bin-scala_2.12.tgz > /dev/null 2>&1
 
@@ -102,7 +127,8 @@ function flink_clean() {
 
 function kafka_install() {
     echo "$(date +'%d/%m/%y %T') Install Kafka"
-    cd ${REPO_HOME}/${DOWNLOADS}
+#    cd ${REPO_HOME}/${DOWNLOADS}
+    cd ${DOWNLOADS}
     wget --quiet --no-check-certificate https://dlcdn.apache.org/kafka/3.1.0/kafka_2.12-3.1.0.tgz
     cd ${REPO_HOME}
     tar -zxvf ${DOWNLOADS}/kafka_2.12-3.1.0.tgz > /dev/null 2>&1
@@ -161,9 +187,9 @@ function ingest_job_start() {
 
 function flink_job_start() {
     echo "$(date +'%d/%m/%y %T') Start flink job"
-    PARALLELISM=1
+#    PARALLELISM=1
     APP_BIN="${REPO_HOME}/StockAnalysisApp/target/StockAnalysisApp-0.1.jar"
-    APP_PARAMS=""
+    APP_PARAMS="${J1_ARG} ${J2_ARG} ${CHECKPOINT_INTERVAL} ${FLINK_CHECKPOINT_DIR}"
     ${FLINK_HOME}/bin/flink run -d -p ${PARALLELISM} ${APP_BIN} ${APP_PARAMS}
 }
 
@@ -184,11 +210,41 @@ function platform_stop() {
 	flink_manage_tm stop
 }
 
+function parse_start_args() {
+#    shift
+    
+    while getopts p:i:j:c: opt; do
+        case $opt in
+            p)
+                PARALLELISM=$OPTARG
+            ;;
+            i)
+                J1_ARG=$OPTARG
+                ;;
+            j)
+                J2_ARG=$OPTARG
+                ;;
+            c)
+                CHECKPOINT_INTERVAL=$OPTARG
+                ;;
+            \?) 
+                echo "Invalid argument"
+                echo ""
+                help
+                exit;
+            ;;
+        esac
+    done
+#    echo "-- IN -- par: $PARALLELISM j1: $J1_ARG, j2: $J2_ARG"
+}
+
+
 
 # Check num of arguments
 if [ $# -lt 1 ]; then
     echo "Wrong arguments!"
-    echo $USAGE_MSG
+#    echo $USAGE_MSG
+    help
   exit 1
 fi
 
@@ -196,38 +252,50 @@ ACTION=$1
 
 case "$ACTION" in
     install)
-	install_utilities
-	kafka_install
-	flink_install
-#	redis_install
-	;;
+    	install_utilities
+	    kafka_install
+    	flink_install
+#	    redis_install
+        exit
+	    ;;
+    build)
+        application_build
+        exit
+        ;;
     start)
-	application_build
-	sudo sh -c "sync; echo 3 > /proc/sys/vm/drop_caches "
-	kafka_start
-	sleep 8
-	kafka_create_topics
-	flink_manage_jm start
-	flink_manage_tm start
-#	redis_standalone_start
-	sleep 3
-	flink_job_start
-	sleep 10
-	ingest_job_start
-	;;
+        shift   # ignre "start" parameter and parse next params
+        parse_start_args "$@"
+        echo "par: $PARALLELISM j1: $J1_ARG, j2: $J2_ARG, c: $CHECKPOINT_INTERVAL"
+#    	application_build
+	    sudo sh -c "sync; echo 3 > /proc/sys/vm/drop_caches "
+    	kafka_start
+	    sleep 8
+    	kafka_create_topics
+	    flink_manage_jm start
+    	flink_manage_tm start
+#	    redis_standalone_start
+    	sleep 3
+	    flink_job_start
+    	sleep 10
+	    ingest_job_start
+        exit
+    	;;
     stop)
-	kafka_stop
-	sleep 2
-	kafka_clean
-	flink_manage_jm stop
-	flink_manage_tm stop
-#	redis_shutdown
-	sudo sh -c "sync; echo 3 > /proc/sys/vm/drop_caches "
-	flink_clean
-	;;
+    	kafka_stop
+	    sleep 2
+    	kafka_clean
+	    flink_manage_jm stop
+	    flink_manage_tm stop
+#	    redis_shutdown
+	    sudo sh -c "sync; echo 3 > /proc/sys/vm/drop_caches "
+    	flink_clean
+        exit
+    	;;
     *)
         echo "Unknown argument $ACTION"
-        echo $USAGE_MSG
+#        echo $USAGE_MSG
+        echo ""
+        help
         exit
         ;;
 esac
