@@ -50,7 +50,7 @@ object StockMainApp {
       env.enableCheckpointing(60000 * param._3)
       env.getCheckpointConfig.setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE)
       env.getCheckpointConfig.setExternalizedCheckpointCleanup(ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION)
-      //      env.getCheckpointConfig.setCheckpointStorage("file:///home/skalogerakis/Desktop/DEBS_2022_GrandChallenge/StockAnalysisApp/temp")
+      env.getCheckpointConfig.setCheckpointStorage("file://" + param._4)
     }
 
     /**
@@ -164,8 +164,10 @@ object StockMainApp {
     env.execute("DEBS2022-Challenge")
   }
 
-  def parameterParser(arguments: Array[String]): (Double, Double, Int) = {
+  def parameterParser(arguments: Array[String]): (Double, Double, Int, String) = {
     println(s"++++++Application Parameters++++++++")
+
+    val chkLocation: String = arguments(3)
 
     val checkpointInterval: Int = if (Try(arguments(2).toInt).isSuccess) {
       arguments(2).toInt
@@ -196,11 +198,13 @@ object StockMainApp {
         if (checkpointInterval == -1.0) {
           "No Checkpoint"
         } else {
-          checkpointInterval.toString + " minutes"
+          checkpointInterval.toString + " minutes" + " in path " + chkLocation
         }
       }")
     }
-    (j1, j2, checkpointInterval)
+
+    println("\n++++++++++++++++++++++++++++++++++++")
+    (j1, j2, checkpointInterval, chkLocation)
 
   }
 
