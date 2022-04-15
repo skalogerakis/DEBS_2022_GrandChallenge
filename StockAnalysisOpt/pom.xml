@@ -89,12 +89,12 @@ under the License.
 			<artifactId>lettuce-core</artifactId>
 			<version>${lettuce.version}</version>
 <!--			DISABLE THIS IN INTELLIJ TO WORK-->
-			<exclusions>
-				<exclusion>
-					<groupId>io.netty</groupId>
-					<artifactId>*</artifactId>
-				</exclusion>
-			</exclusions>
+<!--			<exclusions>-->
+<!--				<exclusion>-->
+<!--					<groupId>io.netty</groupId>-->
+<!--					<artifactId>*</artifactId>-->
+<!--				</exclusion>-->
+<!--			</exclusions>-->
 		</dependency>
 
 

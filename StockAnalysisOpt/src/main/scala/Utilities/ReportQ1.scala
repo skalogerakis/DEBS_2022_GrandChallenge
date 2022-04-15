@@ -60,7 +60,7 @@ class ReportQ1 extends KeyedProcessFunction[Long, EMASchema, ResultQ1] {
 
     if (flagResults.value()) {
 
-      println(s"RESULTS For batch ${ctx.getCurrentKey}, For symbol ${in.Symbol}")
+//      println(s"RESULTS For batch ${ctx.getCurrentKey}, For symbol ${in.Symbol}")
       val resultQ1 = ResultQ1.newBuilder()
         .setBatchSeqId(ctx.getCurrentKey)
         .addAllIndicators(resultList.get())

@@ -59,6 +59,7 @@ object StockMainApp {
     env.getConfig.registerTypeWithKryoSerializer(classOf[Batch], classOf[ProtobufSerializer]) //Register our protobuf using this command
     env.getConfig.registerTypeWithKryoSerializer(classOf[ResultQ1], classOf[ProtobufSerializer])
     env.getConfig.registerTypeWithKryoSerializer(classOf[ResultQ2], classOf[ProtobufSerializer])
+    env.setParallelism(2)
 
 
     /**
@@ -75,7 +76,7 @@ object StockMainApp {
       ProducerConfig.ACKS_CONFIG, "all"
     )
     kafkaProducerConfigProperties.setProperty(
-      ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, "true",
+      ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, "true"
     )
     kafkaProducerConfigProperties.setProperty(
       ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, "1"
@@ -134,7 +135,7 @@ object StockMainApp {
     /**
      * This is the custom operator after data input
      */
-    val processedWindow: DataStream[LastPriceOutputSchema] = eventUnpacked.keyBy(_.Symbol).process(new CustomLastPriceProcess()).name("Custom Window Processing")
+    val processedWindow: DataStream[LastPriceOutputSchema] = eventUnpacked.keyBy(_.Symbol).process(new CustomLastPriceProcess()).setParallelism(3).name("Custom Window Processing")
     //    processedWindow.print()
 
     /**
