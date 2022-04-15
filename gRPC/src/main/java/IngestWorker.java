@@ -42,7 +42,7 @@ public class IngestWorker implements Runnable{
         props.put(ProducerConfig.ACKS_CONFIG, "all");   //Set acknowledgements for producer requests.
         props.put(ProducerConfig.RETRIES_CONFIG, 0);    //If the request fails, the producer can automatically retry,
         props.put(ProducerConfig.BATCH_SIZE_CONFIG, 16384); //Specify buffer size in config
-        props.put(ProducerConfig.LINGER_MS_CONFIG, 1);  //Reduce the no of requests less than 0
+        props.put(ProducerConfig.LINGER_MS_CONFIG, 0);  //Reduce the no of requests less than 0
         props.put(ProducerConfig.BUFFER_MEMORY_CONFIG, 335544320);   //The buffer.memory controls the total amount of memory available to the producer for buffering.
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.LongSerializer");
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer");
@@ -74,7 +74,7 @@ public class IngestWorker implements Runnable{
             // data ingestion should be at max 10 batches ahead in order to reduce latency
             if ( (batches_fetched.get() - reported_q2.get()) > 15) {
                 try {
-                    Thread.sleep(10);
+                    Thread.sleep(5);
                 } catch (Exception ex) {
                     System.err.println("Exception " + ex.toString());
                 }
@@ -124,8 +124,8 @@ public class IngestWorker implements Runnable{
             }
 
 
-            ConsumerRecords<Long, ResultQ1> recordsQ1 = consumerQ1.poll(Duration.ofMillis(10));
-            ConsumerRecords<Long,ResultQ2> recordsQ2 = consumerQ2.poll(Duration.ofMillis(10));
+            ConsumerRecords<Long, ResultQ1> recordsQ1 = consumerQ1.poll(Duration.ofMillis(5));
+            ConsumerRecords<Long,ResultQ2> recordsQ2 = consumerQ2.poll(Duration.ofMillis(5));
 
             for(ConsumerRecord<Long,ResultQ1> record1: recordsQ1){
             //    System.out.println("Key1: "+ record1.key() + ", Value1:" +record1.value().toString());
