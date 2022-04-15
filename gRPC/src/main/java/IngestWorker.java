@@ -84,7 +84,7 @@ public class IngestWorker implements Runnable{
             Batch batch = challengeClient.nextBatch(benchmark);
             producer.send(new ProducerRecord<Long, byte[]>(ingestTopicName, batch.getSeqId() ,batch.toByteArray()));
             int curr_count = batches_fetched.incrementAndGet();
-            // System.out.println(new java.util.Date() + " Processed batch ID " + batch.getSeqId() + " (cuur count: " + curr_count + ")");
+             System.out.println(new java.util.Date() + " Processed batch ID " + batch.getSeqId() + " (cuur count: " + curr_count + ")");
             
             if (batch.getLast()){
                 last_bach_fetched.set(true);
@@ -98,6 +98,9 @@ public class IngestWorker implements Runnable{
         System.out.println(new java.util.Date() + " Ingest complete @ " + batches_fetched.get() + " with " + last_bach_fetched.get());
     }
 
+    /**
+     * Result Consumer that expects results from both queries
+     */
     public void ResultConsumer() {
         // Create Kafka consumers that subscribe to topics for Q1 / Q2 results and report back to rpc server
         KafkaConsumer<Long, ResultQ1> consumerQ1 = new KafkaConsumer<Long, ResultQ1>(props, new LongDeserializer(), new DeserializerQ1());
@@ -148,12 +151,88 @@ public class IngestWorker implements Runnable{
         System.out.println(new java.util.Date() + " Benchmark terminated");
     }
 
+    /**
+     * Result Consumer that expects results only from query 1
+     */
+    public void ResultConsumerQ1() {
+        // Create Kafka consumers that subscribe to topics for Q1 / Q2 results and report back to rpc server
+        KafkaConsumer<Long, ResultQ1> consumerQ1 = new KafkaConsumer<Long, ResultQ1>(props, new LongDeserializer(), new DeserializerQ1());
+
+        String topic = "topic";
+        consumerQ1.subscribe(Arrays.asList(topic+"Q1"));
+
+        while(true) {
+
+            if (last_bach_fetched.get() &&
+                    (reported_q2.get() >= batches_fetched.get()) ) {
+                System.out.println(new java.util.Date() + " Reporter complete @ " + reported_q2.get() + " batches");
+                break;
+            }
+
+
+            ConsumerRecords<Long, ResultQ1> recordsQ1 = consumerQ1.poll(Duration.ofMillis(10));
+
+            for(ConsumerRecord<Long,ResultQ1> record1: recordsQ1){
+                //    System.out.println("Key1: "+ record1.key() + ", Value1:" +record1.value().toString());
+                ResultQ1 res1Send = record1.value().toBuilder().setBenchmarkId(benchmark.getId()).build();
+                challengeClient.resultQ1(res1Send);
+                // reported_batches.incrementAndGet();
+                reported_q2.incrementAndGet();
+                // System.out.println(new java.util.Date() + " reported Q1 for " + record1.value().getBatchSeqId() + " reported count: " + reported_batches.get());
+            }
+
+            // System.out.println("---> reported " + reported_batches.get() + " / " + batches_fetched.get() + " (" + last_bach_fetched.get() + ")");
+        }
+
+        challengeClient.endBenchmark(benchmark);
+        System.out.println(new java.util.Date() + " Benchmark terminated");
+    }
+
+    /**
+     * Result Consumer2 that expects results only from query 2
+     */
+    public void ResultConsumerQ2() {
+        // Create Kafka consumers that subscribe to topics for Q1 / Q2 results and report back to rpc server
+        KafkaConsumer<Long, ResultQ2> consumerQ2 = new KafkaConsumer<Long, ResultQ2>(props, new LongDeserializer(), new DeserializerQ2());
+
+        String topic = "topic";
+        consumerQ2.subscribe(Arrays.asList(topic+"Q2"));
+
+        while(true) {
+            if (last_bach_fetched.get() &&
+                    (reported_q2.get() >= batches_fetched.get()) ) {
+
+                System.out.println(new java.util.Date() + " Reporter complete @ " + reported_q2.get() + " batches");
+                break;
+            }
+
+            ConsumerRecords<Long,ResultQ2> recordsQ2 = consumerQ2.poll(Duration.ofMillis(10));
+
+            for(ConsumerRecord<Long,ResultQ2> record2: recordsQ2){
+                //    System.out.println("Key2: "+ record2.key() + ", Value2:" +record2.value().toString());
+                ResultQ2 res2Send = record2.value().toBuilder().setBenchmarkId(benchmark.getId()).build();
+                challengeClient.resultQ2(res2Send);
+                reported_q2.incrementAndGet();
+            }
+
+            // System.out.println("---> reported " + reported_batches.get() + " / " + batches_fetched.get() + " (" + last_bach_fetched.get() + ")");
+        }
+
+        challengeClient.endBenchmark(benchmark);
+        System.out.println(new java.util.Date() + " Benchmark terminated");
+    }
+
     @Override
     public void run() {
+        //Choose the correct mode for the corresponding producer/consumer
         if (mode == 1){
             IngestProducer();
-        } else {
+        } else if (mode == 2){
             ResultConsumer();
+        } else if (mode == 3){
+            ResultConsumerQ1();
+        }else if (mode == 4){
+            ResultConsumerQ2();
         }
     }
 
