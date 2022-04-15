@@ -84,13 +84,13 @@ public class IngestWorker implements Runnable{
             Batch batch = challengeClient.nextBatch(benchmark);
             producer.send(new ProducerRecord<Long, byte[]>(ingestTopicName, batch.getSeqId() ,batch.toByteArray()));
             int curr_count = batches_fetched.incrementAndGet();
-             System.out.println(new java.util.Date() + " Processed batch ID " + batch.getSeqId() + " (cuur count: " + curr_count + ")");
+            //  System.out.println(new java.util.Date() + " Processed batch ID " + batch.getSeqId() + " (cuur count: " + curr_count + ")");
             
             if (batch.getLast()){
                 last_bach_fetched.set(true);
                 producer.flush();
                 producer.close();
-                System.out.println("Received lastbatch, finished!");
+                System.out.println(new java.util.Date() + " Received lastbatch, finished!");
                 break;
             }
             

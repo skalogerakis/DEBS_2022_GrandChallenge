@@ -14,6 +14,7 @@ PARALLELISM=1
 J1_ARG=38
 J2_ARG=100
 CHECKPOINT_INTERVAL=-1
+REPORT_MODE=0   #0=report q1 and q2, 1=report q1, 2=report q2
 
 function help() {
     echo "Syntax: $0 install| start [-p parallelim] [-i inteval1] [-j interval2] | stop"
@@ -26,9 +27,10 @@ function help() {
     echo "      -i <number>  Interval 1 (Default 38)"
     echo "      -j <number>  Interval 2 (Default 100)"
     echo "      -c <minutes> Checkpointing interval in minutes (Default: no checkpointing)" 
+    echo "      -q <number>  Specify the reported queries. 1 for Q1, 2 for Q2. (Default report both queries)"
     echo "stop      Stops processing and processing platform"
     echo ""
-    echo "e.g. ./manage.sh start -p 2 -i 50 -j 90"
+    echo "e.g. ./manage.sh start -p 2 -i 50 -j 90 -q 1"
 }
 
 function install_utilities() {
@@ -77,10 +79,15 @@ function flink_install() {
 
     cd ${REPO_HOME}
     ln -sf ${DOWNLOADS}/flink-1.14.3 ${FLINK_HOME}
+    
+    flink_config
+}
 
+function flink_config() {
     #JM_IP=$(hostname -I | cut -d\  -f1)
     #sed -i -e "/jobmanager\.rpc\.address:/ s/: .*/: ${JM_IP}/" ${FLINK_HOME}/conf/flink-conf.yaml
     sed -i -e "/taskmanager\.memory\.process\.size:/ s/: .*/: 5000m/" ${FLINK_HOME}/conf/flink-conf.yaml
+    sed -i -e "/taskmanager\.numberOfTaskSlots:/ s/: .*/: ${PARALLELISM}/" ${FLINK_HOME}/conf/flink-conf.yaml 
 }
 
 # start/stop flink job manager
@@ -182,7 +189,7 @@ function ingest_job_start() {
     echo "$(date +'%d/%m/%y %T') Start ingesting data"
 	cd ${REPO_HOME}
     BINARY=${REPO_HOME}/gRPC/target/gRPC-1.0-SNAPSHOT-jar-with-dependencies.jar
-    nohup java -jar ${BINARY} > ingest.log 2>&1 &
+    nohup java -jar ${BINARY} ${REPORT_MODE} > ingest.log 2>&1 &
 }
 
 function flink_job_start() {
@@ -213,7 +220,7 @@ function platform_stop() {
 function parse_start_args() {
 #    shift
     
-    while getopts p:i:j:c: opt; do
+    while getopts p:i:j:c:q: opt; do
         case $opt in
             p)
                 PARALLELISM=$OPTARG
@@ -226,6 +233,9 @@ function parse_start_args() {
                 ;;
             c)
                 CHECKPOINT_INTERVAL=$OPTARG
+                ;;
+            q)
+                REPORT_MODE=$OPTARG
                 ;;
             \?) 
                 echo "Invalid argument"
@@ -265,12 +275,13 @@ case "$ACTION" in
     start)
         shift   # ignre "start" parameter and parse next params
         parse_start_args "$@"
-        echo "par: $PARALLELISM j1: $J1_ARG, j2: $J2_ARG, c: $CHECKPOINT_INTERVAL"
+        echo "par: $PARALLELISM j1: $J1_ARG, j2: $J2_ARG, c: $CHECKPOINT_INTERVAL, q: $REPORT_MODE"
 #    	application_build
 	    sudo sh -c "sync; echo 3 > /proc/sys/vm/drop_caches "
     	kafka_start
 	    sleep 8
     	kafka_create_topics
+        flink_config
 	    flink_manage_jm start
     	flink_manage_tm start
 #	    redis_standalone_start

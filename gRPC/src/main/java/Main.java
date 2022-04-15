@@ -19,7 +19,7 @@ import io.grpc.ManagedChannelBuilder;
 public class Main {
 
     public static void main(String[] args) {
-        System.out.println("Data ingestion driver v0.7.5");
+        System.out.println(new java.util.Date() + " Data ingestion driver v0.7.5");
 
         int queryPicker = queryMode(args);
 
