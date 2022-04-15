@@ -1,7 +1,7 @@
 # DEBS-2022 Grand Challenge - Group 14
 *Authors: Kalogerakis Stefanos, Antonis Papaioannou, Kostas Magoutis*
 
-The  DEBS Grand Challenge 2022 focuses on real-time complex event processing of real-world high-volume tick data provided by Infront Financial Technology (https://www.infrontfinance.com/). The goal of the challenge is to efficiently compute specific trend indicators and detect patterns resembling those used by real-life traders to decide on buying or selling on the financial markets.
+The  DEBS Grand Challenge 2022 (https://2022.debs.org/call-for-grand-challenge-solutions/) focuses on real-time complex event processing of real-world high-volume tick data provided by Infront Financial Technology (https://www.infrontfinance.com/). The goal of the challenge is to efficiently compute specific trend indicators and detect patterns resembling those used by real-life traders to decide on buying or selling on the financial markets.
 
 ## Prerequisites
 
@@ -15,14 +15,16 @@ The proposed implementation was tested under the following tools and versions
 | Apache Kafka   | 2.12-3.1.0        |
 
 
-All of the aforementioned utilities can be easily installed using the `./manage.sh` script and the following command
+All of the aforementioned utilities can be easily installed using the `manage.sh` script with the following command
 
     ./manage.sh install
 
 ***NOTE: It is highly recommended to use the script and not install the dependencies manually***
+The script does not perform system-wide installation of the necessary processing tools (Flink, Kafka) rather uses binaries downloaded on the local directory (DEBS_2022_GrandChallenge).
+
 ## Execution Instructions
 
-The `./manage.sh` script completely automates the execution of the implementation. As stated in the prerequisites section, before executing the application for the first time install all the required software stack(utilities, processing platforms) using the following
+The `manage.sh` script completely automates the execution of the implementation. As stated in the prerequisites section, before executing the application for the first time install all the required software stack (utilities, processing platforms) using the following
 
     ./manage.sh install
     
@@ -30,11 +32,11 @@ Next step, is building the application from source code
 
     ./manage.sh build
     
-Lastly, the starting the application follows a similar pattern using the command
+You can deploy and run the application using the manage sciprt as follows (see #optional-start-parameters section for option parameters when starting the processing task)
   
     ./manage.sh start
     
-When everything is done, in order to stop processing and processing platform use the 
+When processing is complete and the results have been reported on the reporting servivce you can stop processing task and the corresponding Flink and Kafka platforms using the script
     
     ./manage.sh stop
 
@@ -57,12 +59,12 @@ For example `./manage.sh start -p 2 -i 50 -j 90 -q 1`, would suggest that the pa
 - In case either of the i, j are invalid then the application executes for the default values
 - In case checkpointing parameter is not valid(not integer) then no checkpointing is performed. 
 - The location where checkpoints are stored is **<repository\_dir>/flink_checkpoint**
-- In case query option is invalid, both queries are evaluated. The application is set to evaluation mode.
-- Parallelism option (if defined) must be a **valid option**. This option also adjusts the flink configurations accordingly such as there are sufficient task slots in the flink cluster to execute.
+- In case the value of the query optional parameter (-q) is invalid, both queries are reported. The application is set to evaluation mode.
+- In case the parallelism option is set the script adjusts the Flink slot settings accordingly allowing the processing task to run with the requested parallelism. 
     
 ## Code Structure
 
-This section briefly highlights on the structure of the implementation and its different components. The provided solution decouples the Data Ingestion-Reporting and Data Processing which allows more portability and flexibility.
+This section includes an overview of the processing taasks design and implementation. The provided solution decouples the Data Ingestion-Reporting and Data Processing which allows more portability and flexibility.
 
 ### gRPC
 
@@ -70,7 +72,7 @@ Responsible for the Data Ingestion-Reporting of the application. Data Ingestion 
 
 ### StockAnalysisApp
 
-Proposed solution for the data processing aspect of the application using the Apache Flink Framework. This is implementation that currently executes in our application and under which our final evaluation scores occur.
+Our proposed solution for the data processing aspect of the application using the Apache Flink Framework. The reported throughtput and latency of our submission on the evaluation platform is:
 
 | Version      | Throughput | Latency |
 | :----:        |    :----:   | :----:   | 
@@ -82,8 +84,4 @@ An evolved version of the running implementation of `StockAnalysisMap`. The main
 
 **NOTE: This version still under extensive evaluation and optimization process, so it is currently not available for execution**
 
-
-## License
-
-*Apache License 2.0*
 
