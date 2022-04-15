@@ -74,7 +74,7 @@ public class IngestWorker implements Runnable{
             // data ingestion should be at max 10 batches ahead in order to reduce latency
             if ( (batches_fetched.get() - reported_q2.get()) > 15) {
                 try {
-                    Thread.sleep(5);
+                    Thread.sleep(10);
                 } catch (Exception ex) {
                     System.err.println("Exception " + ex.toString());
                 }
@@ -124,8 +124,8 @@ public class IngestWorker implements Runnable{
             }
 
 
-            ConsumerRecords<Long, ResultQ1> recordsQ1 = consumerQ1.poll(Duration.ofMillis(5));
-            ConsumerRecords<Long,ResultQ2> recordsQ2 = consumerQ2.poll(Duration.ofMillis(5));
+            ConsumerRecords<Long, ResultQ1> recordsQ1 = consumerQ1.poll(Duration.ofMillis(10));
+            ConsumerRecords<Long,ResultQ2> recordsQ2 = consumerQ2.poll(Duration.ofMillis(10));
 
             for(ConsumerRecord<Long,ResultQ1> record1: recordsQ1){
             //    System.out.println("Key1: "+ record1.key() + ", Value1:" +record1.value().toString());
