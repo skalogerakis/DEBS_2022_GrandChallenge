@@ -72,7 +72,7 @@ public class IngestWorker implements Runnable{
         while(true) {
             // throttle data ingestion until the reporter catches up
             // data ingestion should be at max 10 batches ahead in order to reduce latency
-            if ( (batches_fetched.get() - reported_q2.get()) > 10) {
+            if ( (batches_fetched.get() - reported_q2.get()) > 15) {
                 try {
                     Thread.sleep(10);
                 } catch (Exception ex) {
